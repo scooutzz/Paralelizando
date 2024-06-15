@@ -1,9 +1,10 @@
 package cadastroclient;
 
 import java.io.*;
-import static java.lang.System.out;
+import java.math.BigDecimal;
 import java.net.*;
 import java.util.List;
+import java.util.Scanner;
 import model.Produto;
 
 public class CadastroClient {
@@ -15,23 +16,64 @@ public class CadastroClient {
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
 
-            // Enviar login e senha para o servidor
-            out.writeObject("admin"); // Substituir "admin" pelo login real
+            out.writeObject("admin");
             out.flush();
-            out.writeObject("123qwe"); // Substituir "123qwe" pela senha real
+            out.writeObject("123qwe");
             out.flush();
 
-            // Receber resposta de login do servidor
             String loginResponse = (String) in.readObject();
+            System.out.println(loginResponse);
             if (!loginResponse.equals("Usuário não encontrado")) {
-                // Enviar comando 'L' para solicitar a lista de produtos
-                out.writeObject("L");
-                out.flush();
+                Scanner scanner = new Scanner(System.in);
+                
+                while (true) {
+                    System.out.println("Menu:");
+                    System.out.println("L - Listar");
+                    System.out.println("E - Entrada");
+                    System.out.println("S - Saída");
+                    System.out.println("X - Finalizar");
+                    System.out.println("Escolha uma opcão:");
+                    String command = scanner.nextLine().toUpperCase();
+                    
+                    if (command.equals("X")) {
+                        break;
+                    }
+                    
+                    out.writeObject(command);
+                    out.flush();
+                    
+                    switch (command) {
+                        case "L":
+                            // Listar
+                            List<Produto> produtos = (List<Produto>) in.readObject();
+                            for (Produto produto : produtos) {
+                                System.out.println(produto.getNome());
+                            }
+                            break;
+                        case "E":
+                        case "S":
+                            System.out.print("Id da pessoa: ");
+                            int pessoaId = Integer.parseInt(scanner.nextLine());
+                            System.out.print("Id do produto: ");
+                            int produtoId = Integer.parseInt(scanner.nextLine());
+                            System.out.print("Quantidade: ");
+                            int quantidade = Integer.parseInt(scanner.nextLine());
+                            System.out.print("Valor unitário: ");
+                            BigDecimal valorUnitario = new BigDecimal(scanner.nextLine());
 
-                // Receber lista de produtos do servidor
-                List<Produto> produtos = (List<Produto>) in.readObject();
-                for (Produto produto : produtos) {
-                    System.out.println(produto.getNome());
+                            out.writeInt(pessoaId);
+                            out.writeInt(produtoId);
+                            out.writeInt(quantidade);
+                            out.writeObject(valorUnitario);
+                            out.flush();
+
+                            // Responsta do servidor
+                            String movimentoResponse = (String) in.readObject();
+                            System.out.println(movimentoResponse);
+                            break;
+                        default:
+                            System.out.println("Comando inválido!");
+                    }
                 }
             } else {
                 System.out.println(loginResponse);
